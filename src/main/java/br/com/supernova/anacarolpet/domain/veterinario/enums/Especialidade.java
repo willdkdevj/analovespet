@@ -1,4 +1,4 @@
-package br.com.supernova.anacarolpet.domain.veterinario.common;
+package br.com.supernova.anacarolpet.domain.veterinario.enums;
 
 public enum Especialidade {
     MANIFERO("Manífero"),

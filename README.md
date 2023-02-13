@@ -1,6 +1,7 @@
 # Aplicação REST utilizando Spring3
 O objetivo é usar o Spring Boot para desenvolver uma API Rest invocando as operações de CRUD utilizando o framework Spring na versão 3
 
+[![Spring Badge](https://img.shields.io/badge/-Spring-greenlight?style=flat-square&logo=Spring&logoColor=white&link=https://maven.apache.org/)](https://spring.io/)
 [![Maven Badge](https://img.shields.io/badge/-Maven-black?style=flat-square&logo=Apache-Maven&logoColor=white&link=https://maven.apache.org/)](https://maven.apache.org/)
 [![JPA Badge](https://img.shields.io/badge/-JPA-blue?style=flat-square&logo=GitHub&logoColor=white&link=https://docs.jboss.org/author/display/AS71/JPA%20Reference%20Guide.html)](https://docs.jboss.org/author/display/AS71/JPA%20Reference%20Guide.html)
 [![Hibernate Badge](https://img.shields.io/badge/-Hibernate-green?style=flat-square&logo=Hibernate&logoColor=white&link=https://docs.jboss.org/hibernate/orm/current/quickstart/html_single/)](https://docs.jboss.org/hibernate/orm/current/quickstart/html_single/)
@@ -39,7 +40,7 @@ O objetivo é utilizar o Spring Boot para desenvolver uma API Rest, com algumas 
 
 
 ## Tratamento de Requisições - Dados Recebidos (Formulário)
-As requisições que chegarem a API podem conter informações em seu corpo, comumente encaminhadas através de uma requisição do tipo *POST*, desta forma, trataremos estes dados enviados através do recurso de **Record** (*disponível na versão do Java15*). Este recurso funciona como se fosse uma classe imutável, para facilitar o dado que é trafegado através do conceito do *Data Transient Object - DTO*, tornando o código mais legível e simples. Já nos retornando todas as funcionalidades comuns nos POJO's tradicionais, pois seria necessário digitarmos os métodos getters e setters, criar construtor, e todas as outras verbosidades do Java que é suprimida com o uso do *Record*.
+As requisições que chegarem a API podem conter informações em seu corpo, comumente encaminhadas através de uma requisição do tipo *POST*, desta forma, trataremos estes dados enviados através do recurso de **Record** (*disponível na versão do Java15*). Este recurso funciona como se fosse uma classe imutável, para facilitar o dado que é trafegado através do conceito do *Data Transfer Object - DTO*, tornando o código mais legível e simples. Já nos retornando todas as funcionalidades comuns nos POJO's tradicionais, pois seria necessário digitarmos os métodos getters e setters, criar construtor, e todas as outras verbosidades do Java que é suprimida com o uso do *Record*.
 
 ## Persistência com Hibernate (JPA/MySQL)
 Usaremos o banco de dados MySQL para armazenar as informações da API e junto com ele utilizaremos a biblioteca Flyway. Isso para termos o controle do histórico de evolução do banco de dados, um conceito que chamamos de Migration.

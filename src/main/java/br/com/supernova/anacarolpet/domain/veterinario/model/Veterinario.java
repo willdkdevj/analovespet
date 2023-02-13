@@ -1,7 +1,8 @@
 package br.com.supernova.anacarolpet.domain.veterinario.model;
 
 
-import br.com.supernova.anacarolpet.domain.veterinario.common.Especialidade;
+import br.com.supernova.anacarolpet.domain.veterinario.dto.FormCadastroVeterinario;
+import br.com.supernova.anacarolpet.domain.veterinario.enums.Especialidade;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -28,4 +29,13 @@ public class Veterinario {
     private Especialidade especialidade;
     @Embedded
     private Endereco endereco;
+
+    public Veterinario(FormCadastroVeterinario form) {
+        this.name = form.nome();
+        this.email = form.email();
+        this.crmv = form.crmv();
+        this.endereco = new Endereco(form.formCadastroEndereco());
+    }
+
+
 }
