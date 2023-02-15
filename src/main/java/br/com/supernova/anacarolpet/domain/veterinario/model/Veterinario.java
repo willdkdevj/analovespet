@@ -24,6 +24,8 @@ public class Veterinario {
 
     private String email;
 
+    private String phone;
+
     private String crmv;
     @Enumerated(EnumType.STRING)
     private Especialidade especialidade;
@@ -33,6 +35,7 @@ public class Veterinario {
     public Veterinario(FormCadastroVeterinario form) {
         this.name = form.nome();
         this.email = form.email();
+        this.phone = form.telefone();
         this.crmv = form.crmv();
         this.endereco = new Endereco(form.formCadastroEndereco());
     }
