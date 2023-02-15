@@ -33,12 +33,15 @@ public class Veterinario {
     @Embedded
     private Endereco endereco;
 
+    private Boolean ativo;
+
     public Veterinario(FormCadastroVeterinario form) {
         this.name = form.nome();
         this.email = form.email();
         this.phone = form.telefone();
         this.crmv = form.crmv();
         this.endereco = new Endereco(form.formCadastroEndereco());
+        this.ativo = Boolean.TRUE;
     }
 
     public void validar(DadosAtualizacaoVeterinario formAtualizar){
@@ -47,4 +50,7 @@ public class Veterinario {
         if(formAtualizar.endereco() != null) this.endereco.validarEndereco(formAtualizar.endereco());
     }
 
+    public void inativar() {
+        this.ativo = false;
+    }
 }

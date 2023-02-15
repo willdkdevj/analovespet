@@ -30,7 +30,8 @@ public class VeterinarioController {
     @GetMapping
     public Page<DadosListagemVeterinario> listar(@PageableDefault(size = 10, sort = {"nome"}) Pageable paginacao){
         //return repository.findAll().stream().map(DadosListagemVeterinario::new).toList // Caso fosse necessário o retorno de um objeto List<Veterinario>
-        return repository.findAll(paginacao).map(DadosListagemVeterinario::new);
+        //return repository.findAll(paginacao).map(DadosListagemVeterinario::new); // Retorna todos os registros no Page sem validar o parámetro ativo
+        return repository.findAllByAtivoTrue(paginacao).map(DadosListagemVeterinario::new); // Retorna todos os registros no Page validando o parámetro ativo
     }
     @PutMapping
     @Transactional
@@ -44,6 +45,7 @@ public class VeterinarioController {
     @Transactional
     public void excluir(@PathVariable Long id){
         // repository.deleteById(id); // Excluir o registro físico do banco de dados
-
+        var registro = repository.getReferenceById(id);
+        registro.inativar();
     }
 }

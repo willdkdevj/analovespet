@@ -1,0 +1,1 @@
+ALTER TABLE veterinarios ADD ativo TINYINT NOT NULL;

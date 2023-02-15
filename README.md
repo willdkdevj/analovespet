@@ -100,6 +100,9 @@ Esse tipo de arquivo sempre começará com "V", seguido pelo número que reperse
 
 Será necessário atribuir mais uma anotação ao método do Controller, o @Transactional do **org.springframework.transaction.annotation**. Como esse é um método de escrita, que consiste em um *insert* no banco de dados, precisamos ter uma transação ativa com ele.
 
+> NOTA: Caso ocorra algum problema no versionamento de scripts pelo flyway, ele gera um registro apontando a sua não execução em sua tabela, então, após corrigir o problema será necessário excluir o registro para rodar novamente o projeto. Desta forma execute o comando *DELETE FROM flyway_schema_history WHERE success = 0;*
+
+
 ### Conteainer de Banco de Dados (MySQL)
 Foi utilizado o container **Docker** para disponíbilidar um sistema de gerenciamento de dados **MySQL** para ser utilizado pela aplicação. Desta forma, através do comando abaixo foi disponibilizado a versão *lastest* do SGBD, na qual foi mapeada a porta 3306 do container com a porta 3306 do sistema hospedeiro. Além de fornecido um nome ao contairner a fim de ser identificado com a aplicação através da tag *--name* **mysql-analovespet**.
 ```bash
@@ -123,8 +126,19 @@ A partir daí foi acessado o container em execução para criar uma instância d
 ```
 > Comando (SQL) a fim de criar uma database para armazenar as tabelas
 
-## Dados Retornados (Pageable)
+## Dados Retornados 
+Para retornarmos dados foram utilizados objetos apropriados para esta exposição para evitar de expor dados desnescessários ou inapropriados. Desta forma, foram criados objetos DTO com o Record e com Page.
+Com o Record já sabemos que ele é imutável e só apresenta os dados que acharmos pertinente. Já o Page fornece alguns elementos a fim do recebitador manuseie como achar necessário.
 
+No método listar() do controller inserimos como parâmetro um Pageable com os seguintes paràmetros.
+```java
+    @GetMapping
+    public Page<DadosListagemVeterinario> listar(@PageableDefault(size = 10, sort = {"nome"}) Pageable paginacao){
+        return repository.findAll(paginacao).map(DadosListagemVeterinario::new);
+    }
+```
+Começando pelo parâmetro do método, a anotação **PageableDefault** nos permite customizar como será o retorno da página ao usuário, deste modo, o parâmetro size= 10 informa que será retornado 10 registro por página, já o parâmetro sort = {"nome"} ordena os registro através do valor obtido em nome.
+Já a parametrização do método findAll() existe a implementação que recebe um objeto do tipo Pabeable na qual mapeamos um objeto DTO a partir do objeto de retorno do banco de dados e criamos um construtor neste DTO a fim que a referência ao método ***DadosListagemVeterinario::new*** funcione conforme esperamos para devolver o objeto **Page**.
 
 > É possível traduzir ou nomear de outra forma os parâmetros do Page para o que acharmos necessários ao passa-los no arquivo de configuração ***application.properties***
 
@@ -133,6 +147,36 @@ A partir daí foi acessado o container em execução para criar uma instância d
     spring.data.web.pageable.size-parameter=tamanho
     spring.data.web.sort.sort-parameter=ordem
 ```
+
+Já para atualizar um registro podemos manipular os dados obtidos pelo banco de dados e verificar se os dados fornecidos pela classe *Record* estão presentes, para só neste caso, realizar a atualização do registro. Para isso implementamos o seguinte método no controller:
+
+```java
+    @PutMapping
+    @Transactional
+    public void atualizar(@RequestBody @Valid DadosAtualizacaoVeterinario formAtualizar){
+        Veterinario atualizarRegistro = repository.getReferenceById(formAtualizar.id());
+        atualizarRegistro.validar(formAtualizar);
+
+    }
+```
+Com o método **getReferenceById** é obtida uma instância do registro da entidade (Veterinario) no banco, e a partir daí passamos os dados fornecidos no formulário para valida-lo antes de modificar o registo. E só esta etapa basta para atualizar o registro no banco de dados.
+
+Para excluir um registro não será realizado o processo físico de eliminar um registro persistido em uma tabela de dados. O que será realizado será a exclusão lógica, na qual um parâmetro booleano informa se o registro está ativo ou não para ser retornado ao solicitante. Desta forma, foi modificada a tabela *veterinarios* a fim de inserir um novo parãmetro, denominado ativo, onde:
+*   1 o registro pode ser retornado;
+* E 0 o registro não pode ser retornado;
+
+Este processo foi possível através do versionamento por script SQL realizado pelo Flyway. Desta forma, a classe de controller foi adicionado o seguinte método.
+```java
+    @DeleteMapping("/{id}")
+    @Transactional
+    public void excluir(@PathVariable Long id){
+        // repository.deleteById(id); // Excluir o registro físico do banco de dados
+        var registro = repository.getReferenceById(id);
+        registro.inativar();
+    }
+```
+
+Assim toda vez que for selecionado a exclusão de um registro, ao passa-lo como parâmetro, deste será averiguado sua existência no banco de dados e caso encontrado, será alterado seu atributo **ativo** para *false*. Desta forma, foi modificada a instância também do objeto *Veterinario* que agora em seu construtor insere o valor *true* no parâmetro ativo ao cria-lo.
 
 ## Ferramenta para Teste (Insomnia)
 Mas para testarmos a API, usaremos o Insomnia, sendo uma ferramenta usada para testes em API. Com ela, conseguimos simular a requisição para a API e verificar se as funcionalidades implementadas estão funcionando.

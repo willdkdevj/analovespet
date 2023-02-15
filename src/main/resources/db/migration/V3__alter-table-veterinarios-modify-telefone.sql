@@ -1,0 +1,1 @@
+ALTER TABLE veterinarios MODIFY COLUMN telefone VARCHAR(11);
