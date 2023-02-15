@@ -1,6 +1,7 @@
 package br.com.supernova.anacarolpet.domain.veterinario.model;
 
 
+import br.com.supernova.anacarolpet.domain.veterinario.dto.DadosAtualizacaoVeterinario;
 import br.com.supernova.anacarolpet.domain.veterinario.dto.FormCadastroVeterinario;
 import br.com.supernova.anacarolpet.domain.veterinario.enums.Especialidade;
 import jakarta.persistence.*;
@@ -40,5 +41,10 @@ public class Veterinario {
         this.endereco = new Endereco(form.formCadastroEndereco());
     }
 
+    public void validar(DadosAtualizacaoVeterinario formAtualizar){
+        if(formAtualizar.nome() != null) this.name = formAtualizar.nome();
+        if(formAtualizar.telefone() != null) this.phone = formAtualizar.telefone();
+        if(formAtualizar.endereco() != null) this.endereco.validarEndereco(formAtualizar.endereco());
+    }
 
 }

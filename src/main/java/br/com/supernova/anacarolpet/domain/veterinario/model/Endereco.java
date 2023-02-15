@@ -31,4 +31,16 @@ public class Endereco {
 
     private String cidade;
     private String uf;
+
+    public void validarEndereco(FormCadastroEndereco formEndereco) {
+        if(formEndereco.logradouro() != null) this.logradouro = formEndereco.logradouro();
+        if(formEndereco.bairro() != null) this.bairro = formEndereco.bairro();
+        if(formEndereco.cep() != null) this.cep = formEndereco.cep();
+        if(formEndereco.numero() != null) this.numero = formEndereco.numero();
+        if(formEndereco.complemento() != null) this.complemento = formEndereco.complemento();
+        if(formEndereco.cidade() != null) this.cidade = formEndereco.cidade();
+        if(formEndereco.uf() != null) this.uf = formEndereco.uf();
+
+
+    }
 }
