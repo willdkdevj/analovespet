@@ -230,5 +230,53 @@ Para trata-lo foi utilizada a seguinte estrutura na qual utiliza um objeto *Reco
 ```
 Desta forma, caso seja enviada uma requisição que não contenha um dos parâmetros exigidos para a requisição será apresentado o campo e uma mensagem informando sobre sua necessidade.
 
+## Autenticação e Autorização (Spring Security)
+Para usarmos no Spring Boot, também vamos utilizar esse mesmo módulo, que já existia antes do Boot, o Spring Security, sendo um módulo dedicado para tratarmos das questões relacionadas com segurança em aplicações.
+
+### Objetivos
+*   Autenticação;
+*   Autorização (controle de acesso);
+*   Proteção contra-ataques (CSRF, clickjacking, etc.);
+
+Em suma, o Spring Security possui três objetivos. Um deles é providenciar um serviço para customizarmos como será o controle de autenticação no projeto. Isto é, como os usuários efetuam login na aplicação. 
+
+O Spring Security possui, também, a autorização, sendo o controle de acesso para liberarmos a requisição na API ou para fazermos um controle de permissão. Há, também, um mecanismo de proteção contra os principais ataques que ocorre em uma aplicação, como o CSRF (Cross Site Request Forgery) e o clickjacking.
+
+São esses os três principais objetivos do Spring Security, nos fornecer uma ferramenta para implementarmos autenticação e autorização no projeto e nos proteger dos principais ataques. Isso para não precisarmos implementar o código que protege a aplicação, sendo que já temos disponível.
+
+### Controle de Acesso
+A API back-end não deve ser pública, ou seja, receber requisições sem um controle de acesso. A partir disso, entra o Spring Security para nos auxiliar na proteção dessa API no back-end.
+
+> NOTA: Autenticação em aplicação Web (Stateful) != Autenticação em API Rest (Stateless)
+
+O cliente da API dispara uma requisição, onde o servidor processará essa requisição e devolverá a resposta. Na próxima requisição, o servidor não sabe identificar quem é que está enviando, ele não armazena essa sessão. Assim, o processo de autenticação funciona um pouco diferente, caso esteja acostumado com a aplicação Web.
+
+Há diversas estratégias para lidarmos com a autenticação. Foi utilizado a estratégia de Tokens, com o **JWT - JSON Web Tokens** como protocolo padrão para lidar com o gerenciamento desses tokens.
+
+![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autenticacao.jpg)
+
+> Esse diagrama contém um esquema do processo de autenticação na API
+
+O primeiro passo é a requisição ser disparada pelo aplicativo para a nossa API, e no corpo desta requisição é exibido o JSON com o login e senha digitados na tela de login. O segundo passo é capturar esse login e senha e verificar se o usuário está cadastrado no sistema, isto é, teremos que consultar o banco de dados. Por isso, precisaremos ter uma tabela em que vamos armazenar os usuários e suas respectivas senhas, que podem acessar a API.
+
+Se for válido, a API gera um Token, que nada mais é que uma string. A geração desse Token segue o formato JWT, e esse token é devolvido na resposta para a aplicação de cliente, sendo quem disparou a requisição.
+
+Esse é o processo de uma requisição para efetuar o login e autenticar em uma API Rest, usando tokens. Isto é, teremos um controller mapeando a URL de autenticação, receberemos um DTO com os dados do login e faremos uma consulta no banco de dados. Se tiver tudo certo, geramos um token e devolvemos para o cliente que disparou a requisição.
+
+Esse token deve ser armazenado pelo aplicativo mobile/front-end. Há técnicas para guardar isso de forma segura, porque esse token que identifica se o usuário está logado. Assim, nas requisições seguintes entra o processo de autorização, que consta no diagrama a seguir:
+
+![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autorizacao.jpg)
+
+Será disparada uma requisição para a API. No entanto, além de enviar o JSON com os dados do veterinário no corpo da resposta, a requisição deve incluir um cabeçalho chamado *Authorization*. Neste cabeçalho, é levado o token obtido no processo anterior, o de login.
+
+A diferença será essa: todas as URLs e requisições que desejarmos proteger, teremos que validar se na requisição está vindo o cabeçalho authorization com um token. E é necessário validar este token, gerado pela API.
+
+Portanto, o processo de autorização é: primeiro, chega uma requisição na API e ela lê o cabeçalho authorization, captura o token enviado e valida se foi gerado pela API. Agora é necessário um código para verificar a validade do token.
+
+Pelo fato do token estar vindo, o usuário já está logado. Portanto, o usuário foi logado previamente e recebeu o token. Este token informa se o login foi efetuado ou não. Caso seja válido, seguimos com o fluxo da requisição.
+
+O processo de autorização funciona assim justamente porque a nossa API deve ser Stateless. Ou seja, não armazena estado e não temos uma sessão informando se o usuário está logado ou não. É como se em cada requisição tivéssemos que logar o usuário.
+
+
 ## Ferramenta para Teste (Insomnia)
 Mas para testarmos a API, usaremos o Insomnia, sendo uma ferramenta usada para testes em API. Com ela, conseguimos simular a requisição para a API e verificar se as funcionalidades implementadas estão funcionando.
