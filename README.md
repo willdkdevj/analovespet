@@ -35,7 +35,7 @@ for-the-badge
 *	Validações
 *	Paginação e ordenação
 
-![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/spring3.jpg)
+<img align="right" width="400" height="250" src="https://github.com/willdkdevj/analovespet/blob/master/assets/spring3.jpg">
 
 
 ## Tratamento de Requisições - Dados Recebidos (Formulário)
@@ -253,7 +253,7 @@ O cliente da API dispara uma requisição, onde o servidor processará essa requ
 
 Há diversas estratégias para lidarmos com a autenticação. Foi utilizado a estratégia de Tokens, com o **JWT - JSON Web Tokens** como protocolo padrão para lidar com o gerenciamento desses tokens.
 
-![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autenticacao.jpg)
+![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autenticacao.png)
 
 > Esse diagrama contém um esquema do processo de autenticação na API
 
@@ -265,7 +265,7 @@ Esse é o processo de uma requisição para efetuar o login e autenticar em uma 
 
 Esse token deve ser armazenado pelo aplicativo mobile/front-end. Há técnicas para guardar isso de forma segura, porque esse token que identifica se o usuário está logado. Assim, nas requisições seguintes entra o processo de autorização, que consta no diagrama a seguir:
 
-![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autorizacao.jpg)
+![Buscar Por Nome](https://github.com/willdkdevj/analovespet/blob/master/assets/jwt-autorizacao.png)
 
 Será disparada uma requisição para a API. No entanto, além de enviar o JSON com os dados do veterinário no corpo da resposta, a requisição deve incluir um cabeçalho chamado *Authorization*. Neste cabeçalho, é levado o token obtido no processo anterior, o de login.
 
@@ -275,8 +275,182 @@ Portanto, o processo de autorização é: primeiro, chega uma requisição na AP
 
 Pelo fato do token estar vindo, o usuário já está logado. Portanto, o usuário foi logado previamente e recebeu o token. Este token informa se o login foi efetuado ou não. Caso seja válido, seguimos com o fluxo da requisição.
 
+## Configuração do JWT (Implementando o Algoritmo BCrypt)
 O processo de autorização funciona assim justamente porque a nossa API deve ser Stateless. Ou seja, não armazena estado e não temos uma sessão informando se o usuário está logado ou não. É como se em cada requisição tivéssemos que logar o usuário.
 
+Desta forma, após inserir as dependencias necessárias para trabalhar com o **Spring Security** e criarmos a estrutura para o usuário no banco de dados, foi necessário criar um método para resgatar este usuário no banco de dados a fim de ser validado. Assim, foi criado um classe de serviço a fim de implementar uma interface do *Spring Security* a fim de sobrescrever o método padrão.
+```java
+    @Service
+    public class AutenticationService implements UserDetailsService {
+
+        @Autowired
+        private UsuarioRepository repository;
+        @Override
+        public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+            return repository.findByLogin(username);
+        }
+    }
+```
+
+Além da classe, foi criado um repositório para manipular os dados obtidos através da JPA e criamos o método **findByLogin** que utilizará o nome atribuido ao login para buscar no banco de dados.
+```java
+    public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+        UserDetails findByLogin(String login);
+    }
+
+```
+
+A próxima alteração é configurar o *Spring Security* para ele não usar o processo de **segurança tradicional**, que é o *Stateful*. Pois estou trabalhando com uma API Rest, o processo de autenticação precisa ser *Stateless*.
+
+Foi criada uma classe de configuração e nesta classe que foi concentrada as informações de segurança do **Spring Security**.
+
+```java
+    @Configuration
+    @EnableWebSecurity
+    public class SecurityConfigurations {
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity https) throws Exception {
+            return https.csrf().disable()
+                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                    .and().build();
+        }
+    }
+```
+
+Foi incluída a configuração do processo de autenticação, que precisa ser *stateless*. Para isso, foi criado um método cujo retorno será um objeto chamado **SecurityFilterChain**, do próprio *Spring*. 
+
+> NOTA: O objeto SecurityFilterChain do Spring é usado para configurar o processo de autenticação e de autorização.
+
+No método, é necessário devolver um objeto **SecurityFilterChain**, contudo, ele não é instanciado. O que foi feito foi utilizado o próprio **HttpSecurity**, do Spring, a fim de resgatar do ***HTTP***.
+
+Além disso, foi configurado a desabilitação do ***CSRF (Cross-Site Request Forgery)*** a fim de inativar a proteção contra-ataques do tipo CSRF (Cross-Site Request Forgery), pois será trabalhado o processo de autenticação via tokens. Nesse cenário, o próprio token é uma proteção contra esses tipos de ataques e seria redundante.
+
+Também foi criado um controller a fim de analisar estas requisições para entrada e realizar a devolutiva do Token de autorização, desta forma implementamos o método da seguinte forma.
+```java
+    @RestController
+    @RequestMapping("/login")
+    public class AuteinticationController {
+        @Autowired
+        private AuthenticationManager manager;
+
+        public ResponseEntity efetuarLogin(@RequestBody @Valid FormAutenticacao form){
+            var token = new UsernamePasswordAuthenticationToken(form.login(), form.senha());
+            var authenticate = manager.authenticate(token);
+        }
+    }
+```
+
+O processo de autenticação está na **classe AutenticationService**, a classe de serviço. pois é necessário chamar o método loadUserByUsername, já que é ele que usa o repository para efetuar o select no banco de dados. Porém, *não chamamos a classe service de forma direta no Spring Security*. Foi necessário chamar outra classe do Spring que na qual chamará a AutenticationService em segundo plano.
+
+Essa classe é a ***Authentication Manager** do Spring, responsável por disparar o processo de autenticação. Na qual a injetamos através da anotação @Autowired, mas para isso também é necessário configura-la na classe de configuração, pois o Spring não a injeta sem ter uma instância configurada.
+
+Para usarmos o objeto, utilizamos o método *authenticate()* chamando o objeto manager, e desta forma informar o token. O método authenticate(token) recebe o DTO do Spring. Por isso, precisamos converter para UsernamePasswordAuthenticationToken - como se fosse um DTO do próprio Spring.
+
+
+### Algoritmo BCrypt (Spring)
+As senhas, por uma boa prática de segurança, não podem ficar expostas a quem realizar a consulta no banco de dados. Desta forma, foi implementado um algoritmo de *hash* a fim de mascara-las para não serem exibidas.
+
+Para fazer sua configuração criamos um método na classe de configuração que instancia um objeto ***BCryptPasswordEncoder***, do próprio Spring.
+
+```java
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
+    }
+```
+
+### JWT AUTH0
+**JWT (JSON Web Token)** é um padrão que define uma forma compacta e segura de transmitir dados junto com uma assinatura entre duas partes. A carga em um JWT é um objeto JSON que afirma algumas declarações. Essa carga útil pode ser facilmente verificada e confiável pelo verificador, pois é assinada digitalmente. Os JWTs podem ser assinados usando uma chave secreta ou um par de chaves pública/privada .
+
+Um JWT consiste basicamente em três partes:
+*   Cabeçalho;
+*   Carga útil;
+*   Assinatura;
+
+Cada uma dessas seções representa uma string codificada em Base64 separada por pontos ('.') como um delimitador.
+
+Para isso, foi instalada a dependência obtida pelo site http://jwt.io para utilizar no projeto e criado outro *service* a fim de implementa-la.
+```java
+    @Service
+    public class JWTToken {
+
+        @Value("${api.security.token.secret}")
+        private String secret;
+    public String getToken(Usuario usuario){
+        try {
+            var algorithm = Algorithm.HMAC256(secret);
+            return JWT.create()
+                    .withIssuer("API Ana Loves Pets") // Configurado a qual API pertence o webservice
+                    .withSubject(usuario.getLogin()) // Obtido o nome do usuário que acessou
+                    .withExpiresAt(dataDeExpiracao()) // Informado uma quantidade limite de acesso para o token fornecido
+                    .sign(algorithm);
+        } catch (JWTCreationException ex){
+                throw new RuntimeException("Erro ao gerar o Token JWT");
+        }
+    }
+
+        private Instant dataDeExpiracao() {
+            return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+        }
+    }
+```
+
+### Validar Acesso a API
+O Spring tem uma classe chamada ***DispatcherSevlet***, responsável por receber todas as requisições do projeto. Ela descobre qual controller será preciso chamar em cada requisição. Depois que a requisição passa pelo DispatcherSevlet, os **Handler Interceptors** são executados. Com ele, identificamos o controller a ser chamado e outras informações relacionadas ao *Spring*.
+
+Já os ***Filters*** aparecem antes mesmo da execução do Spring, onde decidimos se a requisição será interrompida ou se chamaremos, ainda, outro filter. Portanto, foi implementado um filter ou um interceptor ao projeto. Desta forma, ele terá o papel de ser executado como o "interceptador" da requisição.
+```java
+    @Component
+    public class SecurityFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+            var jwtToken = recoverToken(request);
+            if(jwtToken != null) {
+                var login = service.getSubject(jwtToken);
+                var usuario = repository.findByLogin(login);
+
+                var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+
+            filterChain.doFilter(request, response);
+        }
+
+        private String recoverToken(HttpServletRequest request) {
+            var authorization = request.getHeader("Authorization");
+            if(authorization.isEmpty()) throw new JWTTokenException("Token JWT não enviado no cabeçalho [Authorization]");
+
+            return authorization.replace("Bearer: ", "");
+        }
+    }
+```
+
+Para determinar que esta sessão está valida e o usuário tem permissão para acesso utilizamos um método para verificar se este usuário foi o mesmo que gerou o token, desta forma, utilizamos o método getSubject() na classe de serviço JWTToken para validar este dado.
+```java
+    public  String getSubject(String jwtToken){
+       try {
+           var algorithm = Algorithm.HMAC256(secret);
+           return JWT.require(algorithm)
+                   .withIssuer("API Ana Loves Pets")
+                   .build()
+                   .verify(jwtToken)
+                   .getSubject();
+       } catch (JWTCreationException ex){
+           throw new RuntimeException("Token JWT inválido!");
+       }
+   }
+```
+Agora que foi desabilitado o processo de autenticação padrão do Spring, para implementarmos um customizado, é necessário informar ao Spring que o usuário foi autenticado e esta autorizado para acessar a API. Para isso, após validarmos que existe um subject (login) autenticado pelo token passamos ao Spring o objeto autenticador para liberar acesso ao método através da classe ***SecurityContextHolder***.
+```java
+    if(jwtToken != null) {
+        var login = service.getSubject(jwtToken);
+        var usuario = repository.findByLogin(login);
+
+        var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+```
 
 ## Ferramenta para Teste (Insomnia)
 Mas para testarmos a API, usaremos o Insomnia, sendo uma ferramenta usada para testes em API. Com ela, conseguimos simular a requisição para a API e verificar se as funcionalidades implementadas estão funcionando.
