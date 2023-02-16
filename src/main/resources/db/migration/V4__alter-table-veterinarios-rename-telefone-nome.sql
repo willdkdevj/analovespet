@@ -1,0 +1,1 @@
+ALTER TABLE veterinarios RENAME COLUMN  name TO nome;

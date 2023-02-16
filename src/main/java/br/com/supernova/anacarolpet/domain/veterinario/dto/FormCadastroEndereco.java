@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 public record FormCadastroEndereco(
         @NotBlank
         String logradouro,
-        @NotBlank
+//        @NotBlank
         String bairro,
         @NotBlank
         @Pattern(regexp = "\\d{8}")
@@ -17,5 +17,4 @@ public record FormCadastroEndereco(
         String uf,
         String complemento,
         String numero) {
-
 }

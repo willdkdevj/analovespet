@@ -5,12 +5,13 @@ O objetivo é usar o Spring Boot para desenvolver uma API Rest invocando as oper
 [![Maven Badge](https://img.shields.io/badge/-Maven-black?style=flat-square&logo=Apache-Maven&logoColor=white&link=https://maven.apache.org/)](https://maven.apache.org/)
 [![JPA Badge](https://img.shields.io/badge/-JPA-blue?style=flat-square&logo=GitHub&logoColor=white&link=https://docs.jboss.org/author/display/AS71/JPA%20Reference%20Guide.html)](https://docs.jboss.org/author/display/AS71/JPA%20Reference%20Guide.html)
 [![Hibernate Badge](https://img.shields.io/badge/-Hibernate-green?style=flat-square&logo=Hibernate&logoColor=white&link=https://docs.jboss.org/hibernate/orm/current/quickstart/html_single/)](https://docs.jboss.org/hibernate/orm/current/quickstart/html_single/)
+
 ![Badge em Desenvolvimento](http://img.shields.io/static/v1?label=status&message=Em%20Desenvolvimento&color=GREEN&style=flat-square)
 
 ## Indice
 
-*   [Por que utilizar a especificação JPA](#por-que-utilizar-a-especificação-jpa)
-*   [O framework Hibernate](#o-framework-hibernate)
+*   [Objetivos](#objetivos)
+    *   [Objetivos Principais](#objetivos-principais)
 *   [A Especificação JPA](#a-especificação-jpa)
 *   [Hibernate + JPA](#hibernate--jpa)
 *   [Projeto Maven e suas dependências](#projeto-maven-e-suas-dependências)
@@ -103,7 +104,7 @@ Será necessário atribuir mais uma anotação ao método do Controller, o @Tran
 > NOTA: Caso ocorra algum problema no versionamento de scripts pelo flyway, ele gera um registro apontando a sua não execução em sua tabela, então, após corrigir o problema será necessário excluir o registro para rodar novamente o projeto. Desta forma execute o comando *DELETE FROM flyway_schema_history WHERE success = 0;*
 
 
-### Conteainer de Banco de Dados (MySQL)
+### Container de Banco de Dados (MySQL)
 Foi utilizado o container **Docker** para disponíbilidar um sistema de gerenciamento de dados **MySQL** para ser utilizado pela aplicação. Desta forma, através do comando abaixo foi disponibilizado a versão *lastest* do SGBD, na qual foi mapeada a porta 3306 do container com a porta 3306 do sistema hospedeiro. Além de fornecido um nome ao contairner a fim de ser identificado com a aplicação através da tag *--name* **mysql-analovespet**.
 ```bash
     docker run -e MYSQL_ROOT_PASSWORD=root --name mysql-analovespet -d -p 3306:3306 mysql
@@ -133,8 +134,11 @@ Com o Record já sabemos que ele é imutável e só apresenta os dados que achar
 No método listar() do controller inserimos como parâmetro um Pageable com os seguintes paràmetros.
 ```java
     @GetMapping
-    public Page<DadosListagemVeterinario> listar(@PageableDefault(size = 10, sort = {"nome"}) Pageable paginacao){
-        return repository.findAll(paginacao).map(DadosListagemVeterinario::new);
+    public ResponseEntity<Page<DadosListagemVeterinario>> listar(@PageableDefault(size = 10, sort = {"nome"}) Pageable paginacao){
+
+        var page = repository.findAllByAtivoTrue(paginacao).map(DadosListagemVeterinario::new);
+
+        return ResponseEntity.ok(page);
     }
 ```
 Começando pelo parâmetro do método, a anotação **PageableDefault** nos permite customizar como será o retorno da página ao usuário, deste modo, o parâmetro size= 10 informa que será retornado 10 registro por página, já o parâmetro sort = {"nome"} ordena os registro através do valor obtido em nome.
@@ -153,10 +157,11 @@ Já para atualizar um registro podemos manipular os dados obtidos pelo banco de 
 ```java
     @PutMapping
     @Transactional
-    public void atualizar(@RequestBody @Valid DadosAtualizacaoVeterinario formAtualizar){
-        Veterinario atualizarRegistro = repository.getReferenceById(formAtualizar.id());
+    public ResponseEntity atualizar(@RequestBody @Valid DadosAtualizacaoVeterinario formAtualizar){
+        var atualizarRegistro = repository.getReferenceById(formAtualizar.id());
         atualizarRegistro.validar(formAtualizar);
 
+        return ResponseEntity.ok(new DadosDetalheVeterinario(atualizarRegistro));
     }
 ```
 Com o método **getReferenceById** é obtida uma instância do registro da entidade (Veterinario) no banco, e a partir daí passamos os dados fornecidos no formulário para valida-lo antes de modificar o registo. E só esta etapa basta para atualizar o registro no banco de dados.
@@ -169,14 +174,61 @@ Este processo foi possível através do versionamento por script SQL realizado p
 ```java
     @DeleteMapping("/{id}")
     @Transactional
-    public void excluir(@PathVariable Long id){
+    public ResponseEntity excluir(@PathVariable Long id){
         // repository.deleteById(id); // Excluir o registro físico do banco de dados
         var registro = repository.getReferenceById(id);
         registro.inativar();
+        return ResponseEntity.noContent().build();
     }
 ```
 
 Assim toda vez que for selecionado a exclusão de um registro, ao passa-lo como parâmetro, deste será averiguado sua existência no banco de dados e caso encontrado, será alterado seu atributo **ativo** para *false*. Desta forma, foi modificada a instância também do objeto *Veterinario* que agora em seu construtor insere o valor *true* no parâmetro ativo ao cria-lo.
+
+## Tratamento de Erros
+O próprio Spring Boot nos ajuda para tratar como é devolvida a stack para o cliente. Normalmente, é retornado os seguintes parâmetros na stack:
+*   Timestamp - Informa quando ocorreu o erro apresentando data e hora;
+*   Status - Numeral que representa o código HTTP para aquele problema encontrado;
+*   Error - Informa o tipo de erro encontrado conforme o código de status;
+*   Trace - Informa todo o caminho realizado até encontrar o erro;
+*   Message - Apresenta uma possível solução ou qual foi a origem do problema.
+
+Desta forma, vemos como são muitas as informações retornadas, e muitas vezes não queremos que o nosso cliente final tenha ciência de toda esta informação. Principalmente o *trace* que não ajudará em nada o cliente sobre o problema ocorrido. Assim, podemos omiti-lo do retorno ao acrescentar no **application.properties** a seguinte linha:
+
+```xml
+    server.error.include-stacktrace=never
+```
+
+Por padrão, exceções não tratadas no código são interpretadas pelo **Spring Boot** como erro 500. O correto era utilizarmos a estrutura de *try/catch* para validar nosso código e tratar possíveis erros que venham a ocorrer, mas ao invés de duplicarmos o try-catch no código, podemos usar outro recurso do Spring para isolar esse tipo de tratamento de erros. 
+
+Neste projeto, foi utilizada uma classe para concentrar os tratamentos e os retornos a serem retornado ao cliente utilizando o recurso do Spring, através da anotação ***RestControllerAdvice***.
+```java
+    @RestControllerAdvice
+    public class ErrorHandling {
+        @ExceptionHandler(EntityNotFoundException.class)
+        public ResponseEntity error404(){
+            return ResponseEntity.notFound().build();
+        }
+    }
+```
+
+Assim, temos o tratamento do erro 500 - feito pelo próprio Spring, nós somente configuramos no application.properties - e a classe que trata o erro 404. Podemos ter mais métodos tratando outros códigos de erros.
+
+Agora o erro 400, este erro indica que o servidor não conseguiu processar uma requisição por erro de validação nos dados enviados pelo cliente. 
+Para trata-lo foi utilizada a seguinte estrutura na qual utiliza um objeto *Record* para auxilia-la na apresentação de uma mensagem ao cliente.
+```java
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity error404(MethodArgumentNotValidException ex){
+        var errors = ex.getFieldErrors();
+        return ResponseEntity.badRequest().body(errors.stream().map(ValidationError::new).toList());
+    }
+    
+    private record ValidationError(String campo, String mensagem){
+        public ValidationError(FieldError error){
+            this(error.getField(), error.getDefaultMessage());
+        }
+    }
+```
+Desta forma, caso seja enviada uma requisição que não contenha um dos parâmetros exigidos para a requisição será apresentado o campo e uma mensagem informando sobre sua necessidade.
 
 ## Ferramenta para Teste (Insomnia)
 Mas para testarmos a API, usaremos o Insomnia, sendo uma ferramenta usada para testes em API. Com ela, conseguimos simular a requisição para a API e verificar se as funcionalidades implementadas estão funcionando.

@@ -1,26 +1,16 @@
 package br.com.supernova.anacarolpet.domain.veterinario.model;
 
 import br.com.supernova.anacarolpet.domain.veterinario.dto.FormCadastroEndereco;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@Embeddable
 @Getter
-@EqualsAndHashCode
 public class Endereco {
-
-    public Endereco(FormCadastroEndereco dados) {
-        this.logradouro = dados.logradouro();
-        this.bairro = dados.bairro();
-        this.cep = dados.cep();
-        this.cidade = dados.cidade();
-        this.uf = dados.uf();
-        this.complemento = dados.complemento();
-        this.numero = dados.numero();
-    }
 
     private String logradouro;
     private String bairro;
@@ -31,6 +21,16 @@ public class Endereco {
 
     private String cidade;
     private String uf;
+
+    public Endereco(FormCadastroEndereco dados) {
+        this.logradouro = dados.logradouro();
+        this.bairro = dados.bairro();
+        this.cep = dados.cep();
+        this.cidade = dados.cidade();
+        this.uf = dados.uf();
+        this.complemento = dados.complemento();
+        this.numero = dados.numero();
+    }
 
     public void validarEndereco(FormCadastroEndereco formEndereco) {
         if(formEndereco.logradouro() != null) this.logradouro = formEndereco.logradouro();
