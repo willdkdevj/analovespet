@@ -12,17 +12,23 @@ O objetivo é usar o Spring Boot para desenvolver uma API Rest invocando as oper
 
 *   [Objetivos](#objetivos)
     *   [Objetivos Principais](#objetivos-principais)
-*   [A Especificação JPA](#a-especificação-jpa)
-*   [Hibernate + JPA](#hibernate--jpa)
-*   [Projeto Maven e suas dependências](#projeto-maven-e-suas-dependências)
-    *   [O Arquivo Persistence (XML)](#o-arquivo-persistence-xml)
-    *   [Entidades (Entity)](#entidades-entity)
-    *   [Transaction (Camada DAO)](#transaction-camada-dao)
-*   [Relacionamentos Entre Tabelas (Mapeamento)](#relacionamentos-entre-tabelas-mapeamento)
-*   [Ciclo de Vida das Entidades](#ciclo-de-vida-das-entidades)
-*   [Consultas (JPQL)](#consultas-jpql)
-*   [Ansioso (EAGER) e Preguiçoso (LAZY)](#ansioso-eager-e-preguiçoso-lazy)
-*   [Criteria API](#criteria-api)
+*   [Tratamento de Requisições](#tratamento-de-requisições---dados-recebidos-formulário)
+    *   [Validação de Conteúdo](#validação-de-conteúdo-validation-constraints)
+*   [Persistência com Hibernate](#persistência-com-hibernate-jpamysql)
+    *   [Container de Banco de Dados](#container-de-banco-de-dados-mysql)
+*   [Dados Retornados](#dados-retornados)
+*   [Tratamento de Erros](#tratamento-de-erros)
+*   [Autenticação e Autorização](#autenticação-e-autorização-spring-security)
+    *   [Objetivos](#objetivos-1)
+    *   [Controle de Acesso](#controle-de-acesso)
+*   [Configuração do JWT](#configuração-do-jwt-implementando-o-algoritmo-bcrypt)
+    *   [Algoritmo BCrypt](#algoritmo-bcrypt-spring)
+    *   [JWT AUTH0](#jwt-auth0)
+    *   [Validar Acesso a API](#validar-acesso-a-api)
+    *   [Algoritmo BCrypt](#criteria-api)
+    *   [Algoritmo BCrypt](#criteria-api)
+    *   [Algoritmo BCrypt](#criteria-api)
+
 
 
 ## Objetivos
@@ -452,5 +458,11 @@ Agora que foi desabilitado o processo de autenticação padrão do Spring, para 
     }
 ```
 
-## Ferramenta para Teste (Insomnia)
-Mas para testarmos a API, usaremos o Insomnia, sendo uma ferramenta usada para testes em API. Com ela, conseguimos simular a requisição para a API e verificar se as funcionalidades implementadas estão funcionando.
+## Agradecimentos
+Obrigado por ter acompanhado aos meus esforços ao aplicar o conceito para uma implementação de uma API REST utlizando o framework do Spring na versão 3. :octocat:
+
+Como diria um velho mestre:
+> *"Cedo ou tarde, você vai aprender, assim como eu aprendi, que existe uma diferença entre CONHECER o caminho e TRILHAR o caminho."*
+>
+> *Morpheus - The Matrix*
+> 
