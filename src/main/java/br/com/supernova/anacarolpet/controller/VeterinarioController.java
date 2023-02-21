@@ -6,6 +6,7 @@ import br.com.supernova.anacarolpet.domain.veterinario.dto.DadosDetalheVeterinar
 import br.com.supernova.anacarolpet.domain.veterinario.dto.DadosListagemVeterinario;
 import br.com.supernova.anacarolpet.domain.veterinario.dto.FormCadastroVeterinario;
 import br.com.supernova.anacarolpet.domain.veterinario.model.Veterinario;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/veterinarios")
+@SecurityRequirement(name = "bearer-key")
 public class VeterinarioController {
     @Autowired
     private VeterinarioRepository repository;

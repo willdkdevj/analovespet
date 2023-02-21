@@ -458,6 +458,24 @@ Agora que foi desabilitado o processo de autenticação padrão do Spring, para 
     }
 ```
 
+Se faz necessário informar quais métodos deve ser autenticados e quais devem ser liberados sem a necessidade de um token de validação. Isso é possível através do método na qual estamos liberando o acesso ao *endpoint* de login, pois é a partir dele que é gerado o token através do método *requestMatchers()*, e impor que os demais tenham autenticação através do método *anyRequest().authenticated()*. Além disso, precisamos ordernar a execução da lista de filtros, visto que, o *Spring* tem um filtro padrão para verificar se o usuário está logado. Desta forma, precisamos informar que ele deve ser executado após o nosso, através do método *and().addFilterBefore()*.
+
+```java
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity https) throws Exception {
+        return https.csrf().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().authorizeRequests()
+                .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                .anyRequest().authenticated()
+                .and().addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+```
+
+> OBS: Se não especificarmos uma ordem de execução dos filtros, o do Spring será chamado primeiro, e a aplicação não chamará o filtro do JWT.
+
+
 ## Agradecimentos
 Obrigado por ter acompanhado aos meus esforços ao aplicar o conceito para uma implementação de uma API REST utlizando o framework do Spring na versão 3. :octocat:
 
